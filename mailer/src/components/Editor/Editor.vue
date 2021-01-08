@@ -3,7 +3,8 @@
     <main class="grid max-w-7xl mx-auto ">
       <div class="container">
         <div class="row items-center justify-center">
-          <a  @click="rasterizeSVG" href="#"> Save as Image</a>
+          <a @click="rasterizeSVG" href="#"> Save as Image</a>
+
           <CustomButton class="font-bold shadow" @click="addText()">
             Add Text
           </CustomButton>
@@ -32,15 +33,22 @@
           ></canvas>
         </div>
         <aside class="shadow">
-          <Images  :images="images"   @addToCanvas="addImagesToCanvas" />
-          <Images  :images="images" :title="'Upload your images'" @addToCanvas="addImagesToCanvas" />
+          <Images :images="images" @addToCanvas="addImagesToCanvas" />
+          <Images
+            :images="images"
+            :title="'Upload your images'"
+            @addToCanvas="addImagesToCanvas"
+          />
         </aside>
       </div>
+      <div ref="SVGRAS" style="display: inline-block"></div>
     </main>
   </div>
 </template>
 <script>
 import { CANVAS_EVENTS } from "./CanvasEvents";
+
+import { saveAs } from "file-saver";
 import deleteImgIcon from "./DeleteIcon";
 import CustomButton from "../CustomButton";
 import Frames from "./Frames";
@@ -73,8 +81,8 @@ export default {
     this.$on("selection:created", this.showSelectedObject);
   },
   created() {
-    this.$store.dispatch('editor/getImages');
-    this.$store.dispatch('editor/getFrames');
+    this.$store.dispatch("editor/getImages");
+    this.$store.dispatch("editor/getFrames");
     fabric.Object.prototype.transparentCorners = false;
     fabric.Object.prototype.cornerColor = "#32CD32";
     fabric.Object.prototype.cornerSize = 15;
@@ -82,42 +90,66 @@ export default {
     fabric.Object.prototype.cornerStyle = "circle";
   },
   computed: {
-    images: function () {
-      return this.$store.getters['editor/images']
+    images: function() {
+      return this.$store.getters["editor/images"];
     },
-    frames: function () {
-      return this.$store.getters['editor/frames']
+    frames: function() {
+      return this.$store.getters["editor/frames"];
     }
   },
   methods: {
-    rasterizeSVG () {
-      let w = window.open('')
-      w.document.write(this.canvas.toSVG())
-      return 'data:image/svg+xml;utf8,' + encodeURIComponent(this.canvas.toSVG(
-              {
-                viewBox: {
-                  x: 80,
-                  y: 80,
-                  width: 250,
-                  height: 250
-                }
-              }
-      ))
-    },
-    saveImage( e){
-      e.target.href = this.canvas.toDataURL("image/png");
+    rasterizeSVG() {
+      this.$refs.SVGRAS.innerHTML = this.canvas.toSVG();
+      let can = this.$refs.card_editor;
 
-      e.target.download = 'testik.png'
+      can.toBlob(blob => {
+        saveAs(blob, "newImage.png");
+      });
+      // let w = window.open('')
+      // w.document.write(this.canvas.toSVG())
+      // return 'data:image/svg+xml;utf8,' + encodeURIComponent(this.canvas.toSVG(
+      //         {
+      //           viewBox: {
+      //             x: 80,
+      //             y: 80,
+      //             width: 250,
+      //             height: 250
+      //           }
+      //         }
+      // ))
+    },
+    saveImage() {
+      window.open(
+        this.canvas.toDataURL({
+          format: "jpeg",
+          quality: 0.8
+        })
+      );
+      // e.target.href =
+      // e.target.download = 'testik.jpeg'
+    },
+    loadCORS(src) {
+      var with_cors = new Image()
+      with_cors.crossOrigin = 'anonymous';
+      with_cors.src = src
+      with_cors.onload = () => {console.log('loaded')}
+      with_cors.onerror = () => {console.log('failed')}
     },
     addImagesToCanvas() {
-      var imgInstance = new fabric.Image(event.target, {
-        left: 100,
-        top: 100,
-        angle: 30,
+      return new fabric.Image.fromURL(event.target.src, image => {
+        console.log("image", image);
+        image
+          .set({
+            left: 100,
+            top: 100
+          })
+          .setCoords();
+        image._element.crossOrigin = 'anonymous'
 
+
+        // image.setAttribute("crossorigin", "anonymous");
+        this.canvas.add(image);
       });
-      this.canvas.add(imgInstance);
-      console.log(event.target.src);
     },
     setSelectedObject(object) {
       this.selectedActiveObject = object;
@@ -144,13 +176,12 @@ export default {
     setBackground(bgImage) {
       this.canvas.setBackgroundImage(bgImage.src, () => {
         let img = this.canvas.backgroundImage;
-        img.originX = 'left';
-        img.originY = 'top';
+        img.originX = "left";
+        img.originY = "top";
         img.scaleX = this.canvas.getWidth() / img.width;
         img.scaleY = this.canvas.getHeight() / img.height;
-       this.canvas.renderAll();
+        this.canvas.renderAll();
       });
-
     },
     createEvents() {
       CANVAS_EVENTS.forEach(event => {

@@ -1,7 +1,8 @@
 <template>
    <ToolContainer :title="title">
        <div class="grid grid-cols-3 gap-1 frames" v-if="images.length">
-           <img  v-for="(image, index) in images" :key="index"  @click="addToCanvas" :src="image" alt="">
+        <img    v-for="(image, index) in images" :key="index"  @click="addToCanvas" :src="image" alt="">
+         <img  @click="addToCanvas"  src="https://upload.wikimedia.org/wikipedia/commons/f/f9/Phoenicopterus_ruber_in_S%C3%A3o_Paulo_Zoo.jpg" id="external-flamingo" crossorigin="anonymous">
        </div>
    </ToolContainer>
 </template>
